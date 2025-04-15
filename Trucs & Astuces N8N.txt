@@ -1,0 +1,341 @@
+================================================================
+COMPREHENSIVE CHEAT SHEET: n8n NODE JSON DEFINITIONS, ALL TOOLS, INTEGRATION NUANCES, & AI AGENT MANIPULATION
+================================================================
+
+This document combines a general overview of n8n node JSON structures with detailed sections on every tool encounteredâ€”from chat triggers and sticky notes to integrations with Pinecone, Airtable, PostgreSQL, Google Docs, Google Calendar, Telegram, HTTP APIs, SerpAPI, Workflow tools, and more. It also covers best practices for manipulating the AI Agent module and addresses common property value issues when generating JSON via LLMs.
+
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+1. GENERAL n8n NODE JSON STRUCTURE
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+Overview:
+â€¢ Every node is defined as a JSON object with a common set of keys.
+â€¢ These keys apply to all node types, whether they handle triggers, data processing, documentation, or external integrations.
+
+Key Top-Level Fields:
+â€“ **id:** Unique identifier (typically a UUID). Must be unique within a workflow.
+â€“ **name:** Human-readable label (e.g., "When Chat Message Received", "Airtable - Update Records").
+â€“ **type:** Defines node functionality; examples:
+     â€¢ `"@n8n/n8n-nodes-langchain.chatTrigger"` for chat triggers.
+     â€¢ `"n8n-nodes-base.stickyNote"` for annotations.
+     â€¢ Other tools use specific type identifiers.
+â€“ **typeVersion:** Schema version (commonly 1, 1.1, 1.7, etc.). Higher versions may support additional features.
+â€“ **position:** An array `[x, y]` determining the nodeâ€™s placement on the visual canvas.
+â€“ **parameters:** A nested object containing node-specific configurations (actions, credentials, UI text, etc.).
+
+Best Practices:
+â€¢ Use descriptive names and logical positions to maintain an organized workflow.
+â€¢ Leverage n8nâ€™s expression language (e.g., `={{ $json["field"] }}`) for dynamic content.
+â€¢ Validate your JSON (e.g., with a linter) to catch property value issues like improper quotes, trailing commas, or type mismatches.
+
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+2. CHAT TRIGGER NODES (@n8n/n8n-nodes-langchain.chatTrigger)
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+Purpose:
+â€¢ Listen for incoming chat messages via webhooks or embedded chat widgets.
+â€¢ Act as the entry point for conversation-based workflows.
+
+Key Parameters:
+â€¢ **webhookId:** Unique identifier linking the node to its webhook endpoint.
+â€¢ **mode:** Typically `"webhook"` to indicate event reception mode.
+â€¢ **public (boolean):** Determines if the chat endpoint is open for public access. Use with secure `allowedOrigins`.
+â€¢ **initialMessages:** Predefined greeting or instruction text (supports Markdown and dynamic expressions).
+â€¢ **options:** Advanced settings including:
+     â€“ **responseMode:** How responses are sent (e.g., `"responseNode"`).
+     â€“ **allowedOrigins:** Domains permitted to access the chat endpoint.
+     â€“ **title/subtitle:** Custom UI text.
+     â€“ **allowFileUploads:** Enable/disable file uploads.
+     â€“ **loadPreviousSession:** Manages session persistence (e.g., `"memory"`).
+
+Nuances:
+â€¢ Ensure each Chat Triggerâ€™s webhookId is unique.
+â€¢ Dynamic expressions in initialMessages allow runtime customization.
+â€¢ Different typeVersions (1 vs. 1.1) may offer varying parameters.
+
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+3. STICKY NOTE NODES (n8n-nodes-base.stickyNote)
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+Purpose:
+â€¢ Provide in-workflow documentation, annotations, or reminders.
+â€¢ Do not affect data flow; purely for informational use.
+
+Key Parameters:
+â€¢ **content:** The display text (supports Markdown for headers, lists, code blocks, links, images).
+â€¢ **width & height:** Set the visual dimensions on the canvas.
+â€¢ **color (optional):** Numeric code to assign a background color for visual differentiation.
+
+Usage Tips:
+â€¢ Place sticky notes near related nodes to add context.
+â€¢ Use clear and concise Markdown formatting.
+â€¢ Update notes regularly as workflows evolve.
+
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+4. AI AGENT MODULE (n8n-nodes-langchain.agent)
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+Purpose:
+â€¢ Process user input and generate context-aware, interactive responses.
+â€¢ Dynamically invoke other tools based on conversation context and memory.
+
+Key Parameters:
+â€¢ **text:** Primary input, typically set dynamically (e.g., `={{ $json.chatInput }}`).
+â€¢ **options:** Contains a detailed `systemMessage` that:
+     â€“ Defines the AI agentâ€™s role and behavior.
+     â€“ Provides guidelines for memory management and tool invocation.
+     â€“ Can include additional instructions for response formatting.
+â€¢ **promptType:** Usually `"define"`, enforcing the system message rules.
+
+Integration & Memory:
+â€¢ Connects with subfunctions via ports like `ai_tool`, `ai_memory`, and `ai_languageModel`.
+â€¢ Often paired with memory nodes (e.g., `memoryBufferWindow`) to supply conversation history.
+
+Nuances:
+â€¢ Carefully craft the systemMessage to handle various scenarios.
+â€¢ Validate output JSON for property value issues (see Section 6).
+â€¢ Experiment with different models (e.g., "gpt-4o" vs. "gpt-4o-mini") for performance/cost balance.
+
+Snippet Examples:
+-----------------------------------------------------
+*Minimal AI Agent Configuration:*
+{
+  "id": "agent-1",
+  "name": "AI Agent for Chat",
+  "type": "@n8n/n8n-nodes-langchain.agent",
+  "position": [100, 100],
+  "parameters": {
+      "text": "={{ $json.chatInput }}",
+      "options": { "systemMessage": "=You are a helpful assistant." },
+      "promptType": "define"
+  },
+  "typeVersion": 1.7
+}
+
+-----------------------------------------------------
+*AI Agent with Calendar Integration:*
+{
+  "id": "agent-2",
+  "name": "Calendar AI Agent",
+  "type": "@n8n/n8n-nodes-langchain.agent",
+  "position": [200, 200],
+  "parameters": {
+      "text": "={{ $json.chatInput }}",
+      "options": { "systemMessage": "=You are a Google Calendar assistant. Ask for event details before creating an event." },
+      "promptType": "define"
+  },
+  "typeVersion": 1.7
+}
+
+-----------------------------------------------------
+*AI Agent with Memory Integration:*
+{
+  "id": "agent-3",
+  "name": "AI Agent with Memory",
+  "type": "@n8n/n8n-nodes-langchain.agent",
+  "position": [300, 300],
+  "parameters": {
+      "text": "={{ $json.chatInput }}",
+      "options": { "systemMessage": "=Use long-term memory to provide context-aware responses." },
+      "promptType": "define"
+  },
+  "typeVersion": 1.7
+}
+
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+5. MEMORY BUFFER NODES (n8n-nodes-langchain.memoryBufferWindow)
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+Purpose:
+â€¢ Manage temporary conversation history for the AI agent.
+Key Parameters:
+â€¢ **sessionKey:** Identifier for the memory session (can be dynamic).
+â€¢ **contextWindowLength:** Number of messages to retain in the context window.
+Usage Tips:
+â€¢ Adjust contextWindowLength based on conversation complexity.
+â€¢ Use consistent session keys to maintain memory continuity.
+
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+6. INTEGRATION TOOLS & THEIR OPERATIONS
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+This section details each external tool encountered and its specific nuances.
+
+6.1. PINECONE
+---------------
+Purpose:
+â€¢ Interface with Pineconeâ€™s vector database for indexing, upserting, and querying vectors.
+Key Operations:
+â€¢ Creating/Updating Indexes â€“ Define index names, dimensions, and metrics.
+â€¢ Upserting Vectors â€“ Map JSON fields to vector data; schema must match the index.
+â€¢ Querying Vectors â€“ Retrieve similar vectors based on query parameters.
+Nuances:
+â€¢ Ensure API credentials and field mappings are accurate.
+â€¢ Use descriptive node names (e.g., "Pinecone - Upsert Vectors").
+
+6.2. AIRTABLE
+---------------
+Purpose:
+â€¢ Manage records within Airtable bases.
+Key Operations:
+â€¢ Reading, Creating, Updating, and Deleting Records.
+â€¢ Field mapping: JSON keys must exactly match Airtable column names.
+Nuances:
+â€¢ Secure API keys via credentials.
+â€¢ Use dynamic expressions to handle record data.
+
+6.3. POSTGRESQL
+---------------
+Purpose:
+â€¢ Execute SQL queries to manipulate data.
+Key Operations:
+â€¢ SELECT, INSERT, UPDATE, DELETE queries.
+â€¢ Use parameterized queries to avoid SQL injection.
+Nuances:
+â€¢ Ensure SQL syntax is valid and dynamic values are correctly inserted.
+â€¢ Use nodes like postgresTool for JSON manipulation tasks.
+
+6.4. GOOGLE DOCS
+---------------
+Purpose:
+â€¢ Retrieve or update Google Docs for storing long-term memory or notes.
+Key Operations:
+â€¢ â€œgetâ€ for retrieval and â€œupdateâ€ for inserting content.
+â€¢ Use actionsUi (in googleDocsTool) to define JSON payloads for operations.
+Nuances:
+â€¢ Link correct OAuth credentials.
+â€¢ Map dynamic fields (e.g., dates, memory content) properly.
+
+6.5. GOOGLE CALENDAR
+---------------
+Purpose:
+â€¢ Retrieve or create events in Google Calendar.
+Key Operations:
+â€¢ Get Events: Use date range filters with dynamic expressions.
+â€¢ Create Events: Specify start, end, summary, description, and additional fields (attendees, conference data).
+Nuances:
+â€¢ Validate date formats (YYYY-MM-DD HH:mm:ss).
+â€¢ Ensure calendar field mappings match the Google Calendar API.
+
+6.6. TELEGRAM
+---------------
+Purpose:
+â€¢ Manage messaging through Telegram.
+Key Node Types:
+â€¢ telegramTrigger: For receiving messages.
+â€¢ telegram: For sending text replies.
+â€¢ telegramTool: For sending files/documents.
+Key Parameters:
+â€¢ webhookId (for triggers), chatId, text, file (URL), and additionalFields (e.g., parse_mode).
+Nuances:
+â€¢ Use dynamic expressions to retrieve chat IDs.
+â€¢ Test with sandbox credentials when possible.
+
+6.7. HTTP REQUEST
+---------------
+Purpose:
+â€¢ Make generic HTTP API calls (e.g., for DALL-E image generation).
+Key Parameters:
+â€¢ url, method, sendBody, sendHeaders.
+â€¢ authentication: Predefined or generic credentials.
+Nuances:
+â€¢ Ensure JSON bodies are valid.
+â€¢ Use this node for calling external APIs such as DALL-E by setting the model in the payload.
+
+6.8. SERPAPI TOOL
+---------------
+Purpose:
+â€¢ Query search engine data via SerpAPI.
+Key Parameters:
+â€¢ options: Additional query settings.
+Nuances:
+â€¢ Link proper SerpAPI credentials.
+â€¢ Formulate dynamic search queries based on user input.
+
+6.9. WORKFLOW TOOL
+---------------
+Purpose:
+â€¢ Trigger or execute separate workflows (e.g., task creation).
+Key Parameters:
+â€¢ name, workflowId, schemaType, and inputSchema.
+Nuances:
+â€¢ Validate that the input JSON schema matches the target workflow.
+â€¢ Use for automating sub-workflows.
+
+6.10. GMAIL TOOL
+---------------
+Purpose:
+â€¢ Send emails via Gmail.
+Key Parameters:
+â€¢ sendTo, subject, message, additionalFields.
+Nuances:
+â€¢ Personalize emails with dynamic expressions.
+â€¢ Ensure OAuth credentials are correctly set.
+
+6.11. SUPABASE
+---------------
+Purpose:
+â€¢ Interact with Supabase databases.
+Key Parameters:
+â€¢ tableId, fieldsUi (mapping JSON data to table fields).
+Nuances:
+â€¢ Ensure the data schema aligns with your Supabase table.
+â€¢ Secure API keys via credentials.
+
+6.12. GENERIC & AUXILIARY NODES
+---------------
+Purpose:
+â€¢ Handle general operations such as value assignments, merging data, splitting outputs, conditionals, and triggering sub-workflows.
+Key Examples:
+â€¢ Set Nodes: For assigning values (e.g., system prompts).
+â€¢ Merge, Aggregate, Split Out: For data orchestration.
+â€¢ If Nodes: For conditional logic.
+â€¢ Execute Workflow Trigger & Respond To Webhook: For control flow.
+Nuances:
+â€¢ Keep configurations clean and validate dynamic expressions.
+
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+7. ADDITIONAL NOTES ON AI AGENT & MEMORY MANIPULATION
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+â€¢ The AI Agent module orchestrates intelligent responses and tool calls.
+â€¢ Key features include:
+     â€“ Processing user input via the "text" parameter.
+     â€“ Guiding behavior with a detailed "options.systemMessage" (which can include memory, tool-calling rules, and fallback responses).
+     â€“ Connecting to memory nodes (e.g., memoryBufferWindow) for context retention.
+â€¢ Best Practices:
+     â€“ Craft comprehensive system messages that cover edge cases.
+     â€“ Use dynamic expressions to adapt to varying inputs.
+     â€“ Test the full conversational flow to ensure dynamic values (e.g., event details) pass correctly between nodes.
+     â€“ Validate JSON outputs to avoid common property value issues (see Section 6).
+
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+8. COMMON PROPERTY VALUE ISSUES WITH LLM-GENERATED JSON
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+â€¢ **Quotation Marks:**  
+     â€“ Use double quotes for property names and string values.
+â€¢ **Trailing Commas:**  
+     â€“ Avoid trailing commas after the last element in objects or arrays.
+â€¢ **Data Type Mismatches:**  
+     â€“ Do not wrap numeric or boolean values in quotes.
+â€¢ **Case Sensitivity:**  
+     â€“ Ensure property names match expected casing.
+â€¢ **Brackets/Braces:**  
+     â€“ Confirm all JSON structures are properly opened and closed.
+â€¢ **Validation:**  
+     â€“ Run your JSON through validators to catch syntax errors.
+â€¢ **LLM Prompting:**  
+     â€“ When instructing LLMs to generate JSON, specify â€œoutput valid JSONâ€ and warn about these common pitfalls.
+
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+9. FINAL TAKEAWAYS
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+â€¢ **Chat Trigger Nodes:**  
+     â€“ Act as entry points for conversation-based workflows with nuanced parameters for public access and dynamic greetings.
+â€¢ **Sticky Note Nodes:**  
+     â€“ Serve as in-workflow documentation and are essential for clarity in complex workflows.
+â€¢ **AI Agent Module:**  
+     â€“ Integrates user input, dynamic memory, and tool calls to generate context-aware responses.
+â€¢ **Integration Tools:**  
+     â€“ Each external tool (Pinecone, Airtable, PostgreSQL, Google Docs/Calendar, Telegram, HTTP Request, SerpAPI, Workflow Tool, Gmail, Supabase) has specific configuration needs and requires precise field mappings.
+â€¢ **LLM-Generated JSON:**  
+     â€“ Address common property value issues by careful formatting and validation.
+â€¢ **Overall:**  
+     â€“ Combining well-documented node structures with rigorous integration setups leads to robust, maintainable workflows.
+
+================================================================
+END OF COMPREHENSIVE CHEAT SHEET
+================================================================

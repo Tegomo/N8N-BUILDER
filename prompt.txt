@@ -1,0 +1,59 @@
+Je veux que tu crées un workflow n8n JSON entièrement fonctionnel—pas d'images ni de captures d'écran, seulement du JSON valide. Suis ces instructions à la lettre :
+
+- Référence de tous les fichiers de la base de connaissances
+- Utilise les meilleures pratiques et structures JSON de :
+- n8n Astuces & Conseils
+- Guide de la feuille de triche n8n
+- Chatbot IA Agent + Mémoire à Long Terme + Stockage de Notes + Telegram workflow
+- Autres workflows d'exemples que je t'ai fournis
+
+Assure-toi d'intégrer les directives concernant la structure des nœuds, les connexions, l'utilisation de la mémoire et la gestion des erreurs.
+
+Description du Workflow :
+
+Le workflow commence par un nœud Chat Trigger qui reçoit les messages de l'utilisateur.
+
+Il enchaîne avec un nœud AI Agent, qui doit appeler plusieurs outils (par exemple, un outil de temps, un calculateur, ou tout autre outil que tu juges pertinent) pour démontrer comment l'agent peut résoudre les requêtes de l'utilisateur.
+
+Inclure des nœuds Sticky Note où cela est utile et toujours en français, ajoutant de la documentation ou du contexte pour le workflow.
+
+Veille à ce que chaque nœud fasse référence aux données en amont (en utilisant $node["NomDuNœud"]) et passe le contexte pertinent.
+
+Exigences de Configuration Critiques
+
+Pour les nœuds OpenAI, définis toujours :
+
+"operation": "complete"
+
+"resource": "text"
+
+"model": "chatgpt-4o-latest" (fallback "o1-mini" pour des tâches moins coûteuses/plus rapides)
+
+Une "temperature" appropriée (par exemple, 0.1 pour des tâches précises, 0.7 pour des tâches créatives)
+
+Chaque nœud OpenAI qui retourne des données structurées doit avoir "responseFormat": "json_object".
+
+Assure-toi que tous les nœuds sont correctement connectés dans "connections".
+
+Les nœuds de code doivent inclure une gestion des erreurs (try/catch).
+
+Fournis des références de crédentiels (mais ne révèle pas les clés réelles).
+
+Ajoute des nœuds finaux ou des étapes qui marquent clairement la fin du workflow.
+
+Pas de Variables ou JSON Partiel
+
+Ne fournis pas de variables comme "API_KEY_HERE" ou [YOUR DOC ID]. Utilise une référence générique si nécessaire (par exemple, "{{ mesIdentifiants }}").
+
+Produis l'intégralité du workflow dans un bloc de code. Il doit être prêt à être copié et collé, avec un minimum de modifications manuelles.
+Demande si des Détails Manquent
+
+Si tu manques des détails sur un nœud, demande-moi systématiquement des précisions avant de générer le JSON final.
+
+Format de Sortie :
+
+- Produis uniquement du JSON valide dans un bloc de code (json ... ).
+- Pas d'images ou de tentatives de captures d'écran.
+- Aucun commentaire inutile en dehors du bloc de code.
+
+Ton objectif : Fournir un seul fichier JSON autonome qui peut être collé dans n8n, représentant un flux de chat vers un agent IA avec les outils pertinents et des notes collantes, en référence aux meilleures pratiques de la base de connaissances. Si un nœud n'est pas clair ou n'est pas dans ta base de connaissances, liste d'abord ces nœuds et demande des indications. Sinon, produis le JSON final comme demandé.
